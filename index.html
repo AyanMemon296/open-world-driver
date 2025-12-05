@@ -1,0 +1,192 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Play Open World Driver in your browser. A 3D infinite driving sandbox built with JavaScript.">
+    
+    <title>Open World Driver</title>
+    
+    <style>
+        /* --- GLOBAL & RESET --- */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            user-select: none; 
+            -webkit-user-select: none;
+            touch-action: none; /* Critical: Disables browser gestures on mobile */
+            background-color: #000;
+        }
+        canvas { display: block; }
+
+        /* --- UI CONTAINER --- */
+        #ui {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Allows clicks to pass through to canvas where needed */
+        }
+
+        /* --- HUD ELEMENTS --- */
+        #controls {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.6); color: white; padding: 15px;
+            border-radius: 8px; border: 1px solid #555;
+            display: none; /* Default hidden on mobile */
+            pointer-events: auto;
+        }
+        @media (min-width: 800px) { #controls { display: block; } } 
+
+        #car-name {
+            position: absolute;
+            top: 20px; left: 20px;
+            color: #00ff00;
+            font-weight: 800; font-size: 16px;
+            text-shadow: 1px 1px 0 #000;
+            text-transform: uppercase;
+            z-index: 5;
+        }
+
+        #timer {
+            position: absolute; top: 30px; left: 50%; 
+            transform: translateX(-50%);
+            color: #ffffff; font-size: 36px; font-weight: 900; 
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #score {
+            position: absolute; top: 20px; right: 20px;
+            color: #ffaa00; font-size: 24px; font-weight: 800; 
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #speedometer {
+            position: absolute; bottom: 20px; right: 120px;
+            color: white; font-size: 32px; font-weight: 800;
+            text-shadow: 2px 2px 0 #000; font-style: italic; text-align: right;
+        }
+        #speedometer span { font-size: 14px; color: #ccc; font-style: normal; }
+
+        #loading {
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            color: white; font-size: 24px; 
+            background: rgba(0,0,0,0.8); padding: 20px; border-radius: 8px;
+            display: block; 
+        }
+
+        /* --- MINI MAP --- */
+        #minimap-border {
+            position: absolute;
+            bottom: 20px; left: 20px;
+            width: 200px; height: 200px;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.2);
+            z-index: 1; 
+        }
+
+        /* --- GAME OVER OVERLAY --- */
+        #game-over {
+            display: none; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); 
+            color: white; text-align: center;
+            pointer-events: auto; 
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        #game-over h1 { font-size: 60px; margin: 0; color: #ff3333; text-shadow: 4px 4px 0 #000; }
+        #game-over p { font-size: 24px; margin: 20px; }
+        
+        #restart-btn {
+            padding: 15px 40px; font-size: 20px; 
+            background: #ffaa00; color: black;
+            border: none; cursor: pointer; border-radius: 5px; font-weight: bold;
+            transition: background 0.2s;
+        }
+        #restart-btn:hover { background: #ffcc00; }
+
+        /* --- MOBILE TOUCH CONTROLS --- */
+        .touch-btn {
+            position: absolute;
+            width: 60px; height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            color: white; font-size: 18px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; cursor: pointer;
+            user-select: none; touch-action: none;
+            backdrop-filter: blur(4px); z-index: 10;
+        }
+        .touch-btn:active { background: rgba(255, 255, 255, 0.4); transform: scale(0.95); }
+
+        /* Layout: Left Cluster (Steering & Camera) */
+        #btn-left { bottom: 240px; left: 20px; }
+        #btn-right { bottom: 240px; left: 110px; }
+        #btn-cam { bottom: 320px; left: 65px; }
+
+        /* Layout: Right Cluster (Actions Stack) */
+        #btn-gas { bottom: 30px; right: 30px; width: 70px; height: 70px; background: rgba(0, 255, 0, 0.2); border-color: lime; }
+        #btn-brake { bottom: 120px; right: 35px; background: rgba(255, 0, 0, 0.2); border-color: red; }
+        #btn-drift { bottom: 200px; right: 35px; font-size: 10px; }
+        #btn-car { bottom: 280px; right: 35px; }
+        #btn-reset { bottom: 360px; right: 35px; }
+
+        /* Responsive Tweaks for very small screens */
+        @media (max-width: 400px) {
+            #minimap-border { width: 160px; height: 160px; }
+            #btn-left { bottom: 200px; left: 10px; }
+            #btn-right { bottom: 200px; left: 90px; }
+            #btn-cam { bottom: 270px; left: 50px; }
+        }
+    </style>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+            "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="ui">
+        <div id="controls">
+            <h3 style="margin: 0 0 10px 0; color: #ffaa00;">CONTROLS</h3>
+            <b>W, A, S, D</b> - Drive<br>
+            <b>SPACE</b> - Handbrake<br>
+            <b>R</b> - Reset<br>
+            <b>C</b> - Camera<br>
+            <b>V</b> - Change Car<br>
+        </div>
+        
+        <div id="car-name">F1 RACER</div>
+        <div id="timer">60</div>
+        <div id="score">SCORE: 0</div>
+        <div id="speedometer">0 <span>km/h</span></div>
+        <div id="loading">Loading Engine...</div>
+        
+        <div id="minimap-border"></div> 
+
+        <div class="touch-btn" id="btn-left">A</div>
+        <div class="touch-btn" id="btn-right">D</div>
+        <div class="touch-btn" id="btn-cam">C</div>
+
+        <div class="touch-btn" id="btn-gas">W</div>
+        <div class="touch-btn" id="btn-brake">S</div>
+        <div class="touch-btn" id="btn-drift">SPACE</div>
+        <div class="touch-btn" id="btn-car">V</div>
+        <div class="touch-btn" id="btn-reset">R</div>
+    </div>
+
+    <div id="game-over">
+        <h1>GAME OVER</h1>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button id="restart-btn" onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+
+    <script type="module" src="./game.js"></script>
+</body>
+</html>
