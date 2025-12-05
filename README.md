@@ -4,7 +4,7 @@
 
 **Open World Driver** is a high-performance 3D infinite driving sandbox built entirely with **JavaScript, Three.js, and Cannon.es**. It features procedural city generation, realistic physics-based drifting, vehicle customization, and a fully responsive mobile interface.
 
-👉 **Play Live:** [**INSERT YOUR GITHUB PAGES OR NETLIFY LINK HERE**]
+👉 **Play Live:** [https://ayanmemon296.github.io/open-world-driver/](https://ayanmemon296.github.io/open-world-driver/)
 
 -----
 
