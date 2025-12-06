@@ -49,15 +49,15 @@
 
 ## 🕹️ Controls
 
-| Action | PC Keyboard | Mobile Touch |
-| :--- | :--- | :--- |
-| **Steer** | `A` / `D` or `Left` / `Right` | ◀ / ▶ Arrows |
-| **Accelerate** | `W` or `Up` | Green **W** Button |
-| **Brake/Reverse** | `S` or `Down` | Red **S** Button |
-| **Handbrake** | `SPACE` | **DRIFT** Button |
-| **Change Car** | `V` | **V** Button |
-| **Change Camera** | `C` | **C** Button |
-| **Reset Car** | `R` | **R** Button |
+| Action | Keyboard / Touch Screen |
+| :--- | :--- |
+| **Steer** | `A` / `D` |
+| **Accelerate** | `W` Green Button |
+| **Brake/Reverse** | `S` Red Button |
+| **Handbrake** | `SPACE` |
+| **Change Car** | `V` |
+| **Change Camera** | `C` |
+| **Reset Car** | `R` |
 
 -----
 
